@@ -1,0 +1,12 @@
+clientID=
+clientSecret=
+redirectURL=
+channelId=
+refreshTokenFile=.refresh_token
+ownSender=
+openingHour=
+closingHour=
+minPollingPeriod=6
+pollingThrottleRatio=0.1666
+dailyAnnouncementTime=
+
