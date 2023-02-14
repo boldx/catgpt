@@ -8,17 +8,17 @@ const FormData = require('form-data');
 const DEBUG = process.env.DEBUG;
 
 
-const cat_api = axios.create({
+const catApi = axios.create({
   baseURL: 'https://cataas.com/'
 });
 
 
-const chat_api = axios.create({
+const chatApi = axios.create({
   baseURL: 'https://api.zoom.us/v2/chat'
 });
 
 
-const oauth_api = axios.create({
+const oauthApi = axios.create({
   baseURL: 'https://zoom.us/oauth',
   auth: {
     username: process.env.clientID,
@@ -35,7 +35,7 @@ async function refreshTokens() {
     }
     const params = new url.URLSearchParams({grant_type: 'refresh_token', refresh_token: refreshToken});
     try {
-        let resp = await oauth_api.post('/token', params.toString());
+        let resp = await oauthApi.post('/token', params.toString());
         storeTokens(resp.data)
     } catch (error) {
         console.error(`Refresh token request failed: ${error} ${JSON.stringify(error.response?.data)}`);
@@ -45,7 +45,7 @@ async function refreshTokens() {
 
 function storeTokens(body) {
     if (body.access_token) {
-        chat_api.defaults.headers.common['Authorization'] = `Bearer ${body.access_token}`;
+        chatApi.defaults.headers.common['Authorization'] = `Bearer ${body.access_token}`;
         console.log('access token was updated');
     }
     if (body.refresh_token) {
@@ -98,12 +98,12 @@ async function postFileToChannel(channelId, fileBuffer, fileName) {
     var form = new FormData();
     form.append('to_channel', channelId)
     form.append('files', fileBuffer, fileName)
-    return chat_api.post('https://file.zoom.us/v2/chat/users/me/messages/files', form, {
+    return chatApi.post('https://file.zoom.us/v2/chat/users/me/messages/files', form, {
         beforeRedirect: (opts, res) => {
             opts.headers = {
                 ...opts.headers,
               // "The caller must retain the authorization header when redirected to a different hostname." ;w;
-              "Authorization": chat_api.defaults.headers.common['Authorization'],
+              "Authorization": chatApi.defaults.headers.common['Authorization'],
             }
         }
     })
@@ -178,9 +178,9 @@ class CatGPT {
                 console.log('Doing the daily anouncement');
                 try {
                     if (Math.random() > 0.5) {
-                        await chat_api.post('/users/me/messages', { to_channel: this._channelId, message: "Meow!"})
+                        await chatApi.post('/users/me/messages', { to_channel: this._channelId, message: "Meow!"})
                     } else {
-                        let resp = await cat_api.get('/cat', {responseType: 'arraybuffer'});
+                        let resp = await catApi.get('/cat', {responseType: 'arraybuffer'});
                         let fn = 'cat.' + resp.headers['content-type'].split('/')[1];  // Hint for Zoom to make a preview picture
                         await postFileToChannel(this._channelId, resp.data, fn);
                     }
@@ -200,7 +200,7 @@ class CatGPT {
         let messages = [];
         try {
             // U have to poll, b/c (at the time of writing) the webhook events are worthless
-            let resp = await chat_api.get('/users/me/messages', {params: { to_channel: this._channelId, from: toProperIsoString(lastSamplingDate)}});
+            let resp = await chatApi.get('/users/me/messages', {params: { to_channel: this._channelId, from: toProperIsoString(lastSamplingDate)}});
             messages = resp.data.messages;
         } catch (error) { 
             console.error(`Reading messages failed: ${JSON.stringify(error.response?.data)}`);
@@ -215,7 +215,7 @@ class CatGPT {
             
             if (Math.random() > 0.9 && message.reply_main_message_id != this._lastConversationMainMessageId) {
                 try {
-                    await chat_api.patch(`/users/me/messages/${message.id}/emoji_reactions`, { to_channel: this._channelId, action: 'add', emoji: 'U+1F431'}) // 🐱
+                    await chatApi.patch(`/users/me/messages/${message.id}/emoji_reactions`, { to_channel: this._channelId, action: 'add', emoji: 'U+1F431'}) // 🐱
                 } catch (error) { 
                     console.error(`Posting emoji failed: ${JSON.stringify(error.response?.data)}`);
                 };    
@@ -226,7 +226,7 @@ class CatGPT {
                 this._lastConversationMainMessageId = message.reply_main_message_id || message.id;
                 let triggerWordCount = message.message.split(' ').length
                 try {
-                    await chat_api.post(
+                    await chatApi.post(
                         '/users/me/messages', 
                         {to_channel: this._channelId, reply_main_message_id: this._lastConversationMainMessageId, message: generateText(triggerWordCount)}
                     )
@@ -242,7 +242,7 @@ class CatGPT {
 
 
 async function logChannels() {
-    let resp = await chat_api.get('/users/me/channels');
+    let resp = await chatApi.get('/users/me/channels');
     console.log(resp.data);
 }
 
