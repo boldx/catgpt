@@ -154,7 +154,7 @@ class CatGPT {
     
     async _handler() {
         let currentTime = new Date();
-        console.log('tick', this._pollCounter, this._throttledPollThreshold, isWorkingHours(currentTime), this._pollCounter > this._throttledPollThreshold)
+        //console.log('tick', this._pollCounter, this._throttledPollThreshold, isWorkingHours(currentTime))
         await this._fastHandler(currentTime, this._lastSamplingDate);
         this._lastSamplingDate = currentTime;
         // The cat sometimes takes a nap... and there is a rate limit on the Zoom Chat
@@ -175,7 +175,6 @@ class CatGPT {
     async _fastHandler(currentTime, lastSamplingDate) {
         if (isWorkday(currentTime) && toHoursAndMinutes(currentTime) == this._dailyAnnouncementTime) {
             if (!this._hadDailyAnnouncement) {
-                this._hadDailyAnnouncement = true;
                 console.log('Doing the daily anouncement');
                 try {
                     if (Math.random() > 0.5) {
@@ -185,9 +184,9 @@ class CatGPT {
                         let fn = 'cat.' + resp.headers['content-type'].split('/')[1];  // Hint for Zoom to make a preview picture
                         await postFileToChannel(this._channelId, resp.data, fn);
                     }
+                    this._hadDailyAnnouncement = true;
                 } catch (error) {
                     console.error(`Posting daily announcement failed: ${JSON.stringify(error?.response?.data)}`);
-                    this._hadDailyAnnouncement = false;
                 }
             }
         } else {
@@ -259,7 +258,7 @@ async function main() {
     logEnv();
     await refreshTokens();
     setInterval(refreshTokens, 3600 * 1000 * 0.45);
-    if (DEBUG) logChannels();
+    logChannels();
     new CatGPT(parseInt(process.env.minPollingPeriod) * 1000, parseFloat(process.env.pollingThrottleRatio), process.env.channelId, process.env.ownSender, process.env.dailyAnnouncementTime)
 }
 
