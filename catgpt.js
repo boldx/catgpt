@@ -180,7 +180,7 @@ class CatGPT {
                     if (Math.random() > 0.5) {
                         await chatApi.post('/users/me/messages', { to_channel: this._channelId, message: "Meow!"})
                     } else {
-                        let resp = await catApi.get('/cat', {responseType: 'arraybuffer'});
+                        let resp = await catApi.get('/cat', {responseType: 'arraybuffer', headers: {Accept: 'image'}});
                         let fn = 'cat.' + resp.headers['content-type'].split('/')[1];  // Hint for Zoom to make a preview picture
                         await postFileToChannel(this._channelId, resp.data, fn);
                     }
@@ -248,7 +248,7 @@ async function logChannels() {
 
 
 function logEnv() {
-    for (let varName of ['channelId', 'refreshTokenFile', 'ownSender', 'openingHour', 'closingHour', 'minPollingPeriod', 'pollingThrottleRatio', 'dailyAnnouncementTime']) {
+    for (let varName of ['DEBUG', 'channelId', 'refreshTokenFile', 'ownSender', 'openingHour', 'closingHour', 'minPollingPeriod', 'pollingThrottleRatio', 'dailyAnnouncementTime']) {
         console.log(varName, process.env[varName])
     }
 }
